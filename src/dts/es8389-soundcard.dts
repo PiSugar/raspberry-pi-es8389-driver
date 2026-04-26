@@ -1,0 +1,92 @@
+/*
+ * Device Tree overlay for ES8389 audio codec on Raspberry Pi 3B+.
+ *
+ * Hardware:
+ *   - ES8389 codec on I2C-1 at address 0x10
+ *   - I2S0 (BCM2835) is the bus master providing BCLK and LRCK
+ *   - Codec MCLK is supplied by an on-board fixed crystal (24.576 MHz)
+ *
+ * Pin map (RPi 40-pin header):
+ *   I2C SDA = P3 (GPIO2), I2C SCL = P5 (GPIO3)
+ *   I2S BCLK = P12 (GPIO18), I2S LRCK = P35 (GPIO19),
+ *   I2S DOUT (codec ADC out -> Pi)  = P38 (GPIO20)
+ *   I2S DIN  (Pi -> codec DAC in)   = P40 (GPIO21)
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2835";
+
+	fragment@0 {
+		target = <&i2s>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@1 {
+		target-path = "/";
+		__overlay__ {
+			es8389_mclk: es8389_mclk {
+				compatible = "fixed-clock";
+				#clock-cells = <0>;
+				clock-frequency = <24576000>;
+				clock-output-names = "es8389-mclk";
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&i2c1>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			es8389: es8389@10 {
+				compatible = "everest,es8389";
+				reg = <0x10>;
+				#sound-dai-cells = <0>;
+				clocks = <&es8389_mclk>;
+				clock-names = "mclk";
+				/* Use MCLK pin (external crystal), not BCLK */
+				everest,mclk-src = /bits/ 8 <0x40>;
+			};
+		};
+	};
+
+	fragment@3 {
+		target-path = "/";
+		__overlay__ {
+			sound: sound {
+				compatible = "simple-audio-card";
+				simple-audio-card,name = "es8389-soundcard";
+				simple-audio-card,format = "i2s";
+				simple-audio-card,bitclock-master = <&dailink_cpu>;
+				simple-audio-card,frame-master = <&dailink_cpu>;
+				status = "okay";
+
+				simple-audio-card,widgets =
+					"Microphone", "Mic Jack",
+					"Headphone", "Headphone Jack";
+
+				simple-audio-card,routing =
+					"Headphone Jack", "HPOL",
+					"Headphone Jack", "HPOR",
+					"INPUT1", "Mic Jack",
+					"INPUT2", "Mic Jack";
+
+				dailink_cpu: simple-audio-card,cpu {
+					sound-dai = <&i2s>;
+				};
+
+				simple-audio-card,codec {
+					sound-dai = <&es8389>;
+					system-clock-frequency = <24576000>;
+				};
+			};
+		};
+	};
+};
