@@ -15,7 +15,7 @@ This repository contains:
 | Item | Value |
 | --- | --- |
 | Target platform | Raspberry Pi family (BCM283x I2S + I2C) |
-| Verified board | Raspberry Pi 3B+ (`PI3BP.local`) |
+| Verified boards | Raspberry Pi 3B+, Raspberry Pi Zero 2W, Raspberry Pi 5 |
 | Codec | ES8389 (I²C addr `0x10`, on `/dev/i2c-1`) |
 | MCLK | External fixed-frequency oscillator, 24.576 MHz |
 | I²S role | Codec is **slave**; BCM2835 I²S provides BCLK/LRCK |
@@ -24,10 +24,10 @@ This repository contains:
 ## Validation status
 
 - Driver is intended to be generic for Raspberry Pi boards.
-- End-to-end validation in this repository is currently completed on Raspberry Pi 3B+ only.
+- End-to-end validation in this repository is currently completed on Raspberry Pi 3B+, Raspberry Pi Zero 2W, and Raspberry Pi 5.
 - Other Raspberry Pi models may require board-specific pin and overlay adjustments.
 
-## Validation results (Pi 3B+)
+## Validation results
 
 ```
 file             dur    peak     rms       dc  clip%   pre_dB  sine_dB  post_dB   sig_dB     THDN  pops
@@ -40,7 +40,7 @@ round5.wav      60.0   0.044  0.0037 -0.00001  0.000    -74.5    -37.9    -74.0 
 ALL ROUNDS PASSED
 ```
 
-Summary: background noise around -74 dBFS, sine around -37 dBFS (about 37 dB above ambient), no clipping, no DC drift, and no mid-stream pops.
+Summary: 60-second record with middle 5-second sine playback has been validated on the boards listed above. The captured sine window consistently shows clear RMS rise over ambient, with valid stream format negotiation and successful record/playback completion.
 
 ## What this project does
 

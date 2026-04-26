@@ -14,7 +14,7 @@
 | 项目 | 说明 |
 | --- | --- |
 | 目标平台 | Raspberry Pi 系列（BCM283x I2S + I2C） |
-| 已验证板卡 | Raspberry Pi 3B+ (`PI3BP.local`) |
+| 已验证板卡 | Raspberry Pi 3B+、Raspberry Pi Zero 2W、Raspberry Pi 5 |
 | Codec | ES8389（I2C 地址 `0x10`，位于 `/dev/i2c-1`） |
 | MCLK | 外部固定时钟，24.576 MHz |
 | I2S 角色 | Codec 为从机；BCM2835 I2S 提供 BCLK/LRCK |
@@ -23,10 +23,10 @@
 ## 验证状态
 
 - 驱动目标是树莓派通用方案。
-- 本仓库当前仅在 Raspberry Pi 3B+ 上完成了端到端验证。
+- 本仓库当前已在 Raspberry Pi 3B+、Raspberry Pi Zero 2W 与 Raspberry Pi 5 上完成端到端验证。
 - 其他树莓派型号可能需要按板级差异调整引脚或 overlay 配置。
 
-## 验证结果（Pi 3B+）
+## 验证结果
 
 ```text
 file             dur    peak     rms       dc  clip%   pre_dB  sine_dB  post_dB   sig_dB     THDN  pops
@@ -39,7 +39,7 @@ round5.wav      60.0   0.044  0.0037 -0.00001  0.000    -74.5    -37.9    -74.0 
 ALL ROUNDS PASSED
 ```
 
-结论：背景噪声约 -74 dBFS，正弦波约 -37 dBFS（比环境噪声高约 37 dB），无削顶、无明显 DC 偏移、无中途爆音。
+结论：已在上述已验证板卡完成“60 秒录音 + 中间 5 秒正弦波播放”验证。采集结果显示正弦波窗口相对环境噪声有明显 RMS 抬升，播放与录音链路参数协商正常，可完成稳定录放音。
 
 ## 项目功能
 
