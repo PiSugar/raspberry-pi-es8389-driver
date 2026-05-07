@@ -50,10 +50,17 @@ static const char * const es8389_core_supplies[] = {
 static bool es8389_volatile_register(struct device *dev,
 			unsigned int reg)
 {
-	if ((reg  <= 0xff))
+	switch (reg) {
+	case ES8389_RESET:
+	case ES8389_CSM_STATE1:
+	case ES8389_CSM_STATE2:
+	case ES8389_CHIP_ID0:
+	case ES8389_CHIP_ID1:
+	case ES8389_MAX_REGISTER:
 		return true;
-	else
+	default:
 		return false;
+	}
 }
 
 static const DECLARE_TLV_DB_SCALE(dac_vol_tlv, -9550, 50, 0);
@@ -95,7 +102,7 @@ static const char *const alc[] = {
 	"ALC OFF",
 	"ADCR ALC ON",
 	"ADCL ALC ON",
-	"ADCL & ADCL ALC ON",
+	"ADCL & ADCR ALC ON",
 };
 
 static const char *const ramprate[] = {
@@ -137,7 +144,7 @@ static const char *const winsize[] = {
 };
 
 static const struct soc_enum alc_enable =
-	SOC_ENUM_SINGLE(ES8389_ALC_ON, 5, 4, alc);
+	SOC_ENUM_SINGLE(ES8389_ALC_ON, 6, 4, alc);
 static const struct soc_enum alc_ramprate =
 	SOC_ENUM_SINGLE(ES8389_ALC_CTL, 4, 16, ramprate);
 static const struct soc_enum alc_winsize =
@@ -232,9 +239,9 @@ static const struct snd_kcontrol_new es8389_snd_controls[] = {
 	SOC_ENUM("PGAR Select", es8389_pgar_enum),
 	SOC_ENUM("ALC Capture Switch", alc_enable),
 	SOC_SINGLE_TLV("ALC Capture Target Level", ES8389_ALC_TARGET,
-			0, 0x0f, 0, alc_target_tlv),
+			0, 0x1f, 0, alc_target_tlv),
 	SOC_SINGLE_TLV("ALC Capture Max Gain", ES8389_ALC_GAIN,
-			0, 0x0f, 0, alc_max_level),
+			0, 0x1f, 0, alc_max_level),
 	SOC_ENUM("ADC Ramp Rate", alc_ramprate),
 	SOC_ENUM("ALC Capture Winsize", alc_winsize),
 	SOC_DOUBLE("ADC OSR Volume ON Switch", ES8389_ADC_MUTE, 6, 7, 1, 0),
@@ -665,23 +672,11 @@ static int es8389_set_bias_level(struct snd_soc_component *component,
 		regmap_write(es8389->regmap, ES8389_CSM_JUMP, 0xE4);
 		regmap_write(es8389->regmap, ES8389_RESET, 0x01);
 		regmap_write(es8389->regmap, ES8389_CLK_OFF1, 0xC3);
+		regcache_sync(es8389->regmap);
 		break;
 	case SND_SOC_BIAS_PREPARE:
 		break;
 	case SND_SOC_BIAS_STANDBY:
-		regmap_update_bits(es8389->regmap, ES8389_ADC_HPF1, 0x0f, 0x04);
-		regmap_update_bits(es8389->regmap, ES8389_ADC_HPF2, 0x0f, 0x04);
-		regmap_write(es8389->regmap, ES8389_CSM_JUMP, 0xD4);
-		usleep_range(70000, 72000);
-		regmap_write(es8389->regmap, ES8389_ANA_CTL1, 0x59);
-		regmap_write(es8389->regmap, ES8389_ADC_EN, 0x00);
-		regmap_write(es8389->regmap, ES8389_CLK_OFF1, 0x00);
-		regmap_write(es8389->regmap, ES8389_RESET, 0x3E);
-		regmap_update_bits(es8389->regmap, ES8389_DAC_INV, 0x80, 0x80);
-		usleep_range(8000, 8500);
-		regmap_update_bits(es8389->regmap, ES8389_DAC_INV, 0x80, 0x00);
-
-		clk_disable_unprepare(es8389->mclk);
 		break;
 	case SND_SOC_BIAS_OFF:
 		break;
@@ -714,6 +709,7 @@ static int es8389_mute(struct snd_soc_dai *dai, int mute, int direction)
 			regmap_write(es8389->regmap, ES8389_CSM_JUMP, 0xE4);
 			regmap_write(es8389->regmap, ES8389_RESET, 0x01);
 			regmap_write(es8389->regmap, ES8389_CLK_OFF1, 0xC3);
+			regcache_sync(es8389->regmap);
 		}
 
 		if (direction == SNDRV_PCM_STREAM_PLAYBACK) {
@@ -724,8 +720,8 @@ static int es8389_mute(struct snd_soc_dai *dai, int mute, int direction)
 			regmap_update_bits(es8389->regmap, ES8389_DAC_FORMAT_MUTE,
 						0x03, 0x00);
 		} else {
-			regmap_update_bits(es8389->regmap, ES8389_ADC_HPF1, 0x0f, 0x0a);
-			regmap_update_bits(es8389->regmap, ES8389_ADC_HPF2, 0x0f, 0x0a);
+			regmap_update_bits(es8389->regmap, ES8389_ADC_HPF1, 0x0f, 0x04);
+			regmap_update_bits(es8389->regmap, ES8389_ADC_HPF2, 0x0f, 0x04);
 			regmap_update_bits(es8389->regmap, ES8389_ADC_FORMAT_MUTE,
 						0x03, 0x00);
 		}
@@ -841,7 +837,7 @@ static void es8389_init(struct snd_soc_component *component)
 	regmap_write(es8389->regmap, ES8389_RESET, 0x01);
 	regmap_write(es8389->regmap, ES8389_DAC_RESET, 0x02);
 
-	regmap_update_bits(es8389->regmap, ES8389_ADC_FORMAT_MUTE, 0x03, 0x03);
+	regmap_update_bits(es8389->regmap, ES8389_ADC_FORMAT_MUTE, 0x03, 0x00);
 	regmap_update_bits(es8389->regmap, ES8389_DAC_FORMAT_MUTE, 0x03, 0x03);
 }
 
