@@ -720,8 +720,8 @@ static int es8389_mute(struct snd_soc_dai *dai, int mute, int direction)
 			regmap_update_bits(es8389->regmap, ES8389_DAC_FORMAT_MUTE,
 						0x03, 0x00);
 		} else {
-			regmap_update_bits(es8389->regmap, ES8389_ADC_HPF1, 0x0f, 0x04);
-			regmap_update_bits(es8389->regmap, ES8389_ADC_HPF2, 0x0f, 0x04);
+			regmap_update_bits(es8389->regmap, ES8389_ADC_HPF1, 0x1f, 0x0D);
+			regmap_update_bits(es8389->regmap, ES8389_ADC_HPF2, 0x1f, 0x0D);
 			regmap_update_bits(es8389->regmap, ES8389_ADC_FORMAT_MUTE,
 						0x03, 0x00);
 		}
@@ -773,8 +773,8 @@ static void es8389_init(struct snd_soc_component *component)
 	regmap_write(es8389->regmap, ES8389_ISO_CTL, 0x00);
 	regmap_write(es8389->regmap, ES8389_RESET, 0x7E);
 	regmap_write(es8389->regmap, ES8389_ISO_CTL, 0x38);
-	regmap_write(es8389->regmap, ES8389_ADC_HPF1, 0x64);
-	regmap_write(es8389->regmap, ES8389_ADC_HPF2, 0x04);
+	regmap_write(es8389->regmap, ES8389_ADC_HPF1, 0x6D);
+	regmap_write(es8389->regmap, ES8389_ADC_HPF2, 0x4D);
 	regmap_write(es8389->regmap, ES8389_DAC_INV, 0x03);
 
 	regmap_write(es8389->regmap, ES8389_VMID, 0x2A);
